@@ -49,18 +49,16 @@ elif st.session_state.phase == "names":
     st.title("👥 Spielernamen eingeben")
     st.write(f"Wie heißt Spieler {st.session_state.current_name}?")
 
-    # einzigartiger Key, damit Streamlit den Input nicht überschreibt
-    name = st.text_input(
-        "Name eingeben:",
-        key=f"name_input_{st.session_state.current_name}"
-    )
+    # einzigartiger Key, damit Streamlit den Input pro Spieler trennt
+    input_key = f"name_input_{st.session_state.current_name}"
+    name = st.text_input("Name eingeben:", key=input_key)
 
     if st.button("Speichern"):
         if name.strip() != "":
             st.session_state.player_names.append(name.strip())
 
-            # Eingabefeld leeren
-            st.session_state[f"name_input_{st.session_state.current_name}"] = ""
+            # Wichtig: Kein direkter Zugriff auf session_state[input_key] mehr!
+            # Dadurch kein StreamlitAPIException-Fehler.
 
             # Wenn noch Spieler fehlen → nächster Name
             if len(st.session_state.player_names) < st.session_state.num_players:
@@ -70,6 +68,7 @@ elif st.session_state.phase == "names":
             st.rerun()
         else:
             st.warning("Bitte einen gültigen Namen eingeben.")
+
 
 # --- NAMENSÜBERSICHT PHASE ---
 elif st.session_state.phase == "name_review":
