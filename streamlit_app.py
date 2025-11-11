@@ -1,6 +1,9 @@
 import streamlit as st
 import random
 
+st.write("App läuft – aktueller Spieler:", st.session_state.get("aktueller_spieler"))
+
+
 # Initialisierung der Session State Variablen
 if "spieler_anzahl" not in st.session_state:
     st.session_state.spieler_anzahl = None
