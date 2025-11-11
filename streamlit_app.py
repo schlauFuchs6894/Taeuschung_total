@@ -8,9 +8,9 @@ for key, default in {
     "words": [],
     "imposter": None,
     "current_player": 0,
-    "confirmed": False,
     "votes": {},
-    "revealed": False
+    "revealed": False,
+    "show_word": False
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -25,44 +25,46 @@ if st.session_state.step == "setup":
         random.shuffle(st.session_state.words)
         st.session_state.step = "play"
         st.session_state.current_player = 0
-        st.session_state.confirmed = False
         st.session_state.votes = {}
         st.session_state.revealed = False
+        st.session_state.show_word = False
 
 # 🟡 Schritt 2: Spieler sehen ihr Wort
 elif st.session_state.step == "play":
     player = st.session_state.players[st.session_state.current_player]
     st.header(f"{player} ist dran")
 
-    if not st.session_state.confirmed:
+    if not st.session_state.show_word:
         if st.button(f"Ich bin {player}"):
-            st.session_state.confirmed = True
+            st.session_state.show_word = True
 
-    if st.session_state.confirmed:
+    if st.session_state.show_word:
         word = st.session_state.words[st.session_state.current_player]
         st.write(f"Dein Wort: **{word}**")
-
         if st.button("Weiter"):
             st.session_state.current_player += 1
-            st.session_state.confirmed = False
+            st.session_state.show_word = False
             if st.session_state.current_player >= len(st.session_state.players):
                 st.session_state.step = "vote"
 
 # 🔴 Schritt 3: Abstimmung
 elif st.session_state.step == "vote":
     st.title("🗳️ Abstimmung: Wer ist der Imposter?")
-    for player in st.session_state.players:
-        vote = st.radio(f"Stimme von {player}", st.session_state.players, key=player)
-        st.session_state.votes[player] = vote
 
-    if st.button("Auswertung") and not st.session_state.revealed:
-        # Stimmen auszählen
+    for player in st.session_state.players:
+        with st.expander(f"{player} stimmt ab"):
+            vote = st.radio("Wähle den Imposter:", st.session_state.players, key=f"vote_{player}")
+            if st.button("Abstimmen", key=f"submit_{player}"):
+                st.session_state.votes[player] = vote
+                st.success(f"{player} hat abgestimmt.")
+
+    if len(st.session_state.votes) == len(st.session_state.players) and not st.session_state.revealed:
+        st.subheader("📊 Auswertung")
         tally = {}
         for vote in st.session_state.votes.values():
             tally[vote] = tally.get(vote, 0) + 1
         voted_out = max(tally, key=tally.get)
 
-        # Imposter ermitteln
         imposter_index = st.session_state.words.index("Du bist der Imposter!")
         imposter_name = st.session_state.players[imposter_index]
 
