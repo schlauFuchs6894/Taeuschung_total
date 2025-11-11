@@ -49,21 +49,42 @@ elif st.session_state.phase == "names":
     st.title("👥 Spielernamen eingeben")
     st.write(f"Wie heißt Spieler {st.session_state.current_name}?")
 
-    name = st.text_input("Name eingeben:")
+    # einzigartiger Key, damit Streamlit den Input nicht überschreibt
+    name = st.text_input(
+        "Name eingeben:",
+        key=f"name_input_{st.session_state.current_name}"
+    )
 
     if st.button("Speichern"):
         if name.strip() != "":
             st.session_state.player_names.append(name.strip())
+
+            # Eingabefeld leeren
+            st.session_state[f"name_input_{st.session_state.current_name}"] = ""
+
+            # Wenn noch Spieler fehlen → nächster Name
             if len(st.session_state.player_names) < st.session_state.num_players:
                 st.session_state.current_name += 1
             else:
-                st.session_state.imposter = random.randint(1, st.session_state.num_players)
-                st.session_state.word = random.choice(word_list)
-                st.session_state.phase = "show_word"
-                st.session_state.current_player = 1
+                st.session_state.phase = "name_review"
             st.rerun()
         else:
             st.warning("Bitte einen gültigen Namen eingeben.")
+
+# --- NAMENSÜBERSICHT PHASE ---
+elif st.session_state.phase == "name_review":
+    st.title("✅ Teilnehmerübersicht")
+    st.write("Alle Spieler wurden erfolgreich eingetragen:")
+
+    for i, name in enumerate(st.session_state.player_names, start=1):
+        st.write(f"**Spieler {i}:** {name}")
+
+    if st.button("Spiel starten 🚀"):
+        st.session_state.imposter = random.randint(1, st.session_state.num_players)
+        st.session_state.word = random.choice(word_list)
+        st.session_state.phase = "show_word"
+        st.session_state.current_player = 1
+        st.rerun()
 
 # --- SHOW WORD PHASE ---
 elif st.session_state.phase == "show_word":
