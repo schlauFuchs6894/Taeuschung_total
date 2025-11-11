@@ -1,17 +1,20 @@
 import streamlit as st
 import random
 
-# Initialisiere Session State
-if "step" not in st.session_state:
-    st.session_state.step = "setup"
-    st.session_state.players = []
-    st.session_state.words = []
-    st.session_state.imposter = None
-    st.session_state.current_player = 0
-    st.session_state.confirmed = False
-    st.session_state.votes = {}
+# 🔧 Session-State initialisieren
+for key, default in {
+    "step": "setup",
+    "players": [],
+    "words": [],
+    "imposter": None,
+    "current_player": 0,
+    "confirmed": False,
+    "votes": {}
+}.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
 
-# Schritt 1: Setup
+# 🟢 Schritt 1: Setup
 if st.session_state.step == "setup":
     st.title("🕵️ Imposter-Spiel")
     num_players = st.number_input("Wie viele Spieler machen mit?", min_value=3, max_value=10, step=1)
@@ -23,7 +26,7 @@ if st.session_state.step == "setup":
         st.session_state.current_player = 0
         st.session_state.confirmed = False
 
-# Schritt 2: Spieler sehen ihr Wort
+# 🟡 Schritt 2: Spieler sehen ihr Wort
 elif st.session_state.step == "play":
     player = st.session_state.players[st.session_state.current_player]
     st.header(f"{player} ist dran")
@@ -40,7 +43,7 @@ elif st.session_state.step == "play":
             if st.session_state.current_player >= len(st.session_state.players):
                 st.session_state.step = "vote"
 
-# Schritt 3: Abstimmung
+# 🔴 Schritt 3: Abstimmung
 elif st.session_state.step == "vote":
     st.title("🗳️ Abstimmung: Wer ist der Imposter?")
     for player in st.session_state.players:
@@ -54,7 +57,7 @@ elif st.session_state.step == "vote":
             tally[vote] = tally.get(vote, 0) + 1
         voted_out = max(tally, key=tally.get)
 
-        # Wer war der Imposter?
+        # Imposter ermitteln
         imposter_index = st.session_state.words.index("Du bist der Imposter!")
         imposter_name = st.session_state.players[imposter_index]
 
@@ -65,6 +68,6 @@ elif st.session_state.step == "vote":
             st.error(f"😈 Der Imposter **{imposter_name}** hat gewonnen!")
 
         # Neustart-Button
-        if st.button("Neues Spiel starten"):
+        if st.button("🔁 Neues Spiel starten"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
