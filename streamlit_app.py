@@ -9,7 +9,8 @@ for key, default in {
     "imposter": None,
     "current_player": 0,
     "confirmed": False,
-    "votes": {}
+    "votes": {},
+    "revealed": False
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -25,6 +26,8 @@ if st.session_state.step == "setup":
         st.session_state.step = "play"
         st.session_state.current_player = 0
         st.session_state.confirmed = False
+        st.session_state.votes = {}
+        st.session_state.revealed = False
 
 # 🟡 Schritt 2: Spieler sehen ihr Wort
 elif st.session_state.step == "play":
@@ -33,10 +36,12 @@ elif st.session_state.step == "play":
 
     if not st.session_state.confirmed:
         if st.button(f"Ich bin {player}"):
-            word = st.session_state.words[st.session_state.current_player]
-            st.write(f"Dein Wort: **{word}**")
             st.session_state.confirmed = True
-    else:
+
+    if st.session_state.confirmed:
+        word = st.session_state.words[st.session_state.current_player]
+        st.write(f"Dein Wort: **{word}**")
+
         if st.button("Weiter"):
             st.session_state.current_player += 1
             st.session_state.confirmed = False
@@ -50,7 +55,7 @@ elif st.session_state.step == "vote":
         vote = st.radio(f"Stimme von {player}", st.session_state.players, key=player)
         st.session_state.votes[player] = vote
 
-    if st.button("Auswertung"):
+    if st.button("Auswertung") and not st.session_state.revealed:
         # Stimmen auszählen
         tally = {}
         for vote in st.session_state.votes.values():
@@ -62,12 +67,16 @@ elif st.session_state.step == "vote":
         imposter_name = st.session_state.players[imposter_index]
 
         st.write(f"Die Gruppe hat **{voted_out}** gewählt.")
+        st.write(f"🔍 Der Imposter war: **{imposter_name}**")
+
         if voted_out == imposter_name:
             st.success("🎉 Die Gruppe hat gewonnen! Der Imposter wurde enttarnt.")
         else:
             st.error(f"😈 Der Imposter **{imposter_name}** hat gewonnen!")
 
-        # Neustart-Button
+        st.session_state.revealed = True
+
+    if st.session_state.revealed:
         if st.button("🔁 Neues Spiel starten"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
