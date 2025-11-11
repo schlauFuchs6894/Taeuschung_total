@@ -69,9 +69,19 @@ if st.session_state.phase == "setup":
     )
 
     if category == "Eigenes Wort eingeben":
-        custom_word = st.text_input("✏️ Gib dein eigenes Wort ein:")
+    custom_input = st.text_input(
+        "✏️ Gib eigene Wörter ein (mit Komma getrennt):",
+        placeholder="z. B. Apfel, Banane, Kiwi"
+    )
+    if custom_input:
+        # Entfernt Leerzeichen und teilt durch Kommas
+        custom_words = [w.strip() for w in custom_input.split(",") if w.strip()]
+        custom_word = random.choice(custom_words) if custom_words else None
     else:
         custom_word = None
+else:
+    custom_word = None
+
 
     if st.button("🎮 Spiel starten"):
         st.session_state.num_players = num
