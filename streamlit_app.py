@@ -1,84 +1,57 @@
 import streamlit as st
 import random
 
-st.write("App läuft – aktueller Spieler:", st.session_state.get("aktueller_spieler"))
+# Session State initialisieren
+if "step" not in st.session_state:
+    st.session_state.step = "setup"
+    st.session_state.players = []
+    st.session_state.words = []
+    st.session_state.imposter = None
+    st.session_state.votes = {}
 
-
-# Initialisierung der Session State Variablen
-if "spieler_anzahl" not in st.session_state:
-    st.session_state.spieler_anzahl = None
-if "aktueller_spieler" not in st.session_state:
-    st.session_state.aktueller_spieler = 1
-if "begriffe" not in st.session_state:
-    st.session_state.begriffe = ["Apfel", "Banane", "Kirsche", "Birne"]
-if "impersonator" not in st.session_state:
-    st.session_state.impersonator = None
-if "spiel_start" not in st.session_state:
-    st.session_state.spiel_start = False
-if "abstimmung" not in st.session_state:
-    st.session_state.abstimmung = None
-if "stimmen" not in st.session_state:
-    st.session_state.stimmen = None
-if "abstimmender_spieler" not in st.session_state:
-    st.session_state.abstimmender_spieler = 1
-
-# Schritt 1: Anzahl der Spieler wählen
-if st.session_state.spieler_anzahl is None:
-    st.title("🕵️ Täuschung Total")
-    st.session_state.spieler_anzahl = st.number_input("Wie viele Spieler machen mit?", min_value=2, max_value=10, step=1)
+# Setup: Spieleranzahl und Namen
+if st.session_state.step == "setup":
+    st.title("🕵️ Imposter-Spiel")
+    num_players = st.number_input("Wie viele Spieler machen mit?", min_value=3, max_value=10, step=1)
     if st.button("Spiel starten"):
-        st.session_state.impersonator = random.randint(1, st.session_state.spieler_anzahl)
-        st.session_state.spiel_start = True
-        st.experimental_rerun()
+        st.session_state.players = [f"Spieler {i+1}" for i in range(num_players)]
+        st.session_state.words = ["Apfel"] * (num_players - 1)
+        imposter_word = "Du bist der Imposter!"
+        st.session_state.words.append(imposter_word)
+        random.shuffle(st.session_state.words)
+        st.session_state.step = "play"
+        st.session_state.current_player = 0
 
-# Schritt 2: Spieler erhalten ihre Begriffe
-elif st.session_state.spiel_start and st.session_state.aktueller_spieler <= st.session_state.spieler_anzahl:
-    st.title(f"Spieler {st.session_state.aktueller_spieler} ist dran")
-    if st.button(f"Ich bin Spieler {st.session_state.aktueller_spieler}"):
-        if st.session_state.aktueller_spieler == st.session_state.impersonator:
-            st.warning("Du bist der Imposter! Versuche, dich nicht zu verraten 😈")
+# Spielphase: Jeder Spieler sieht sein Wort
+elif st.session_state.step == "play":
+    player = st.session_state.players[st.session_state.current_player]
+    st.header(f"{player} ist dran")
+    if st.button(f"Ich bin {player}"):
+        word = st.session_state.words[st.session_state.current_player]
+        st.write(f"Dein Wort: **{word}**")
+        if st.session_state.current_player < len(st.session_state.players) - 1:
+            if st.button("Weiter"):
+                st.session_state.current_player += 1
         else:
-            begriff = random.choice(st.session_state.begriffe)
-            st.success(f"Dein Begriff ist: **{begriff}**")
-        if st.button("Weiter"):
-            st.session_state.aktueller_spieler += 1
-            st.experimental_rerun()
+            if st.button("Zur Abstimmung"):
+                st.session_state.step = "vote"
 
-# Schritt 3: Abstimmung vorbereiten
-elif st.session_state.aktueller_spieler > st.session_state.spieler_anzahl and st.session_state.abstimmung is None:
+# Abstimmung
+elif st.session_state.step == "vote":
     st.title("🗳️ Abstimmung: Wer ist der Imposter?")
-    st.session_state.abstimmung = [None] * st.session_state.spieler_anzahl
-    st.session_state.stimmen = [0] * st.session_state.spieler_anzahl
-    st.experimental_rerun()
-
-# Schritt 4: Jeder Spieler stimmt ab
-elif st.session_state.abstimmung is not None and None in st.session_state.abstimmung:
-    spieler = st.session_state.abstimmender_spieler
-    st.title(f"Spieler {spieler} stimmt ab")
-    auswahl = st.selectbox(f"Spieler {spieler}, wer ist der Imposter?", [f"Spieler {i}" for i in range(1, st.session_state.spieler_anzahl + 1)])
-    if st.button("Abstimmen"):
-        gewählte_nummer = int(auswahl.split()[-1])
-        st.session_state.abstimmung[spieler - 1] = gewählte_nummer
-        st.session_state.stimmen[gewählte_nummer - 1] += 1
-        st.session_state.abstimmender_spieler += 1
-        st.experimental_rerun()
-
-# Schritt 5: Ergebnis anzeigen
-elif st.session_state.abstimmung is not None and None not in st.session_state.abstimmung:
-    st.title("📢 Ergebnis der Abstimmung")
-    max_stimmen = max(st.session_state.stimmen)
-    meistgewählt = [i + 1 for i, s in enumerate(st.session_state.stimmen) if s == max_stimmen]
-
-    st.write("Die Spieler haben abgestimmt:")
-    for i, stimme in enumerate(st.session_state.abstimmung, start=1):
-        st.write(f"Spieler {i} hat für Spieler {stimme} gestimmt.")
-
-    if st.session_state.impersonator in meistgewählt:
-        st.success(f"🎉 Der Imposter (Spieler {st.session_state.impersonator}) wurde enttarnt! Die Gruppe gewinnt!")
-    else:
-        st.error(f"😈 Der Imposter (Spieler {st.session_state.impersonator}) wurde nicht erkannt. Der Imposter gewinnt!")
-
-    if st.button("Neues Spiel starten"):
-        for key in st.session_state.keys():
-            del st.session_state[key]
-        st.experimental_rerun()
+    for player in st.session_state.players:
+        vote = st.radio(f"Stimme von {player}", st.session_state.players, key=player)
+        st.session_state.votes[player] = vote
+    if st.button("Auswertung"):
+        # Zähle Stimmen
+        tally = {}
+        for vote in st.session_state.votes.values():
+            tally[vote] = tally.get(vote, 0) + 1
+        voted_out = max(tally, key=tally.get)
+        imposter_index = st.session_state.words.index("Du bist der Imposter!")
+        imposter_name = st.session_state.players[imposter_index]
+        st.write(f"Die Gruppe hat **{voted_out}** gewählt.")
+        if voted_out == imposter_name:
+            st.success("🎉 Die Gruppe hat gewonnen!")
+        else:
+            st.error(f"😈 Der Imposter **{imposter_name}** hat gewonnen!")
