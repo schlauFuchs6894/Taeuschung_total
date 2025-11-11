@@ -143,25 +143,23 @@ elif st.session_state.phase == "result":
     st.write(f"Der Imposter war: **Spieler {st.session_state.imposter}**")
     st.write(f"Das Wort war: **{st.session_state.word}**")
 
-    # --- PDF EXPORT ---
-    if st.button("📄 Ergebnis als PDF speichern"):
-        pdf_path = "/mnt/data/imposter_ergebnis.pdf"
-        c = canvas.Canvas(pdf_path, pagesize=A4)
-        text = c.beginText(50, 800)
-        text.setFont("Helvetica", 12)
-        text.textLine("🕵️‍♂️ Imposter ohne Wort - Spielergebnis")
-        text.textLine("-----------------------------")
-        text.textLine(f"Anzahl Spieler: {st.session_state.num_players}")
-        text.textLine(f"Imposter: Spieler {st.session_state.imposter}")
-        text.textLine(f"Wort: {st.session_state.word}")
-        text.textLine("")
-        text.textLine("Abstimmungsergebnisse:")
-        for p, v in st.session_state.votes.items():
-            text.textLine(f"Spieler {p}: {v} Stimmen")
-        c.drawText(text)
-        c.save()
-        with open(pdf_path, "rb") as f:
-            st.download_button("📥 Download Ergebnis", f, file_name="imposter_ergebnis.pdf")
+if st.button("📄 Ergebnis speichern (Textdatei)"):
+    result_text = f"""
+    🕵️‍♂️ Imposter ohne Wort - Spielergebnis
+    ---------------------------------------
+    Anzahl Spieler: {st.session_state.num_players}
+    Imposter: Spieler {st.session_state.imposter}
+    Wort: {st.session_state.word}
+
+    Abstimmungsergebnisse:
+    """
+    for p, v in st.session_state.votes.items():
+        result_text += f"\nSpieler {p}: {v} Stimmen"
+
+    st.download_button("📥 Download Ergebnis als TXT",
+                       data=result_text.encode("utf-8"),
+                       file_name="imposter_ergebnis.txt")
+
 
     if st.button("🔁 Noch ein Spiel"):
         for key in list(st.session_state.keys()):
