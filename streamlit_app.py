@@ -68,7 +68,7 @@ if st.session_state.phase == "setup":
         list(word_categories.keys()) + ["Eigenes Wort eingeben"]
     )
 
-    if category == "Eigenes Wort eingeben":
+   if category == "Eigenes Wort eingeben":
     custom_input = st.text_input(
         "✏️ Gib eigene Wörter ein (mit Komma getrennt):",
         placeholder="z. B. Apfel, Banane, Kiwi"
