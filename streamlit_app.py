@@ -1,7 +1,5 @@
 import streamlit as st
 import random
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Imposter ohne Wort", page_icon="🕵️‍♂️")
