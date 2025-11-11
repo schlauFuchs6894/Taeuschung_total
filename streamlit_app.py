@@ -20,6 +20,8 @@ if "word" not in st.session_state:
     st.session_state.word = ""
 if "votes" not in st.session_state:
     st.session_state.votes = {}
+if "voting_player" not in st.session_state:
+    st.session_state.voting_player = 1
 if "winner" not in st.session_state:
     st.session_state.winner = None
 
@@ -87,20 +89,29 @@ elif st.session_state.phase == "reveal":
         else:
             st.session_state.phase = "voting"
             st.session_state.votes = {name: 0 for name in st.session_state.player_names}
+            st.session_state.voting_player = 1
         st.rerun()
 
 # --- VOTING PHASE ---
 elif st.session_state.phase == "voting":
     st.title("🗳️ Abstimmung")
-    st.write("Stimmt ab, wer der Imposter ist!")
+    current_voter_name = st.session_state.player_names[st.session_state.voting_player - 1]
+    st.subheader(f"Jetzt stimmt ab: {current_voter_name}")
 
-    options = [name for name in st.session_state.player_names]
+    # Nur Spieler auswählen, nicht sich selbst
+    options = [
+        name for name in st.session_state.player_names
+        if name != current_voter_name
+    ]
     choice = st.selectbox("Wähle den verdächtigen Spieler:", options)
 
     if st.button("Stimme abgeben"):
         st.session_state.votes[choice] += 1
-        total_votes = sum(st.session_state.votes.values())
-        if total_votes >= st.session_state.num_players:
+
+        # Nächster Spieler oder Ergebnis
+        if st.session_state.voting_player < st.session_state.num_players:
+            st.session_state.voting_player += 1
+        else:
             st.session_state.phase = "result"
         st.rerun()
 
@@ -120,6 +131,10 @@ elif st.session_state.phase == "result":
 
     st.write(f"Der Imposter war: **{imposter_name}**")
     st.write(f"Das Wort war: **{st.session_state.word}**")
+
+    st.write("### 📊 Stimmenübersicht:")
+    for player, votes in st.session_state.votes.items():
+        st.write(f"{player}: {votes} Stimmen")
 
     if st.button("🔁 Noch ein Spiel"):
         for key in list(st.session_state.keys()):
