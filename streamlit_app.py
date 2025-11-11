@@ -107,10 +107,22 @@ elif st.session_state.phase == "reveal":
             st.session_state.current_player += 1
             st.session_state.phase = "show_word"
         else:
-            st.session_state.phase = "voting"
-            st.session_state.votes = {name: 0 for name in st.session_state.player_names}
-            st.session_state.voting_player = 1
+            st.session_state.phase = "discussion"
+
+# --- DISCUSSION PHASE ---
+elif st.session_state.phase == "discussion":
+    st.title("💬 Diskussionsrunde")
+    st.write("Jetzt sagt **jeder Spieler ein Wort** zu dem Thema oder beschreibt es kurz, "
+             "ohne das Wort direkt zu nennen. Der Imposter muss versuchen mitzuhalten!")
+
+    st.info("Wenn ihr fertig seid mit der Runde, klickt auf **Weiter zur Abstimmung**.")
+
+    if st.button("Weiter zur Abstimmung 🗳️"):
+        st.session_state.phase = "voting"
+        st.session_state.votes = {name: 0 for name in st.session_state.player_names}
+        st.session_state.voting_player = 1
         st.rerun()
+
 
 # --- VOTING PHASE ---
 elif st.session_state.phase == "voting":
