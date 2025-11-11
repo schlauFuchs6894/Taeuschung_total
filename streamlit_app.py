@@ -143,8 +143,9 @@ elif st.session_state.phase == "result":
     st.write(f"Der Imposter war: **Spieler {st.session_state.imposter}**")
     st.write(f"Das Wort war: **{st.session_state.word}**")
 
-if st.button("📄 Ergebnis speichern (Textdatei)"):
-    result_text = f"""
+    # --- TEXT EXPORT (ohne reportlab) ---
+    if st.button("📄 Ergebnis speichern (Textdatei)"):
+        result_text = f"""
     🕵️‍♂️ Imposter ohne Wort - Spielergebnis
     ---------------------------------------
     Anzahl Spieler: {st.session_state.num_players}
@@ -153,15 +154,11 @@ if st.button("📄 Ergebnis speichern (Textdatei)"):
 
     Abstimmungsergebnisse:
     """
-    for p, v in st.session_state.votes.items():
-        result_text += f"\nSpieler {p}: {v} Stimmen"
+        for p, v in st.session_state.votes.items():
+            result_text += f"\nSpieler {p}: {v} Stimmen"
 
-    st.download_button("📥 Download Ergebnis als TXT",
-                       data=result_text.encode("utf-8"),
-                       file_name="imposter_ergebnis.txt")
-
-
-    if st.button("🔁 Noch ein Spiel"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+        st.download_button(
+            "📥 Download Ergebnis als TXT",
+            data=result_text.encode("utf-8"),
+            file_name="imposter_ergebnis.txt"
+        )
