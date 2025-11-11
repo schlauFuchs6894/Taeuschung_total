@@ -10,7 +10,8 @@ for key, default in {
     "current_player": 0,
     "votes": {},
     "revealed": False,
-    "has_seen_word": False
+    "has_seen_word": False,
+    "show_word": False
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -28,6 +29,7 @@ if st.session_state.step == "setup":
         st.session_state.votes = {}
         st.session_state.revealed = False
         st.session_state.has_seen_word = False
+        st.session_state.show_word = False
 
 # Schritt 2: Spieler sehen ihr Wort
 elif st.session_state.step == "play":
@@ -37,13 +39,15 @@ elif st.session_state.step == "play":
     if not st.session_state.has_seen_word:
         if st.button(f"Ich bin {player}"):
             st.session_state.has_seen_word = True
+            st.session_state.show_word = True
 
-    if st.session_state.has_seen_word:
+    if st.session_state.show_word:
         word = st.session_state.words[st.session_state.current_player]
         st.write(f"Dein Wort: **{word}**")
         if st.button("Weiter"):
             st.session_state.current_player += 1
             st.session_state.has_seen_word = False
+            st.session_state.show_word = False
             if st.session_state.current_player >= len(st.session_state.players):
                 st.session_state.step = "vote"
 
