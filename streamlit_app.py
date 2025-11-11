@@ -1,17 +1,44 @@
 import streamlit as st
 import random
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
+# --- PAGE CONFIG ---
 st.set_page_config(page_title="Imposter ohne Wort", page_icon="🕵️‍♂️")
+
+# --- DESIGN THEME ---
+mode = st.radio("🌗 Wähle Design:", ["Hell", "Dunkel"], horizontal=True)
+
+if mode == "Dunkel":
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-color: #1e1e1e;
+            color: #f5f5f5;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-color: #fafafa;
+            color: #111111;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- SESSION STATE SETUP ---
 if "phase" not in st.session_state:
     st.session_state.phase = "setup"
 if "num_players" not in st.session_state:
     st.session_state.num_players = 0
-if "player_names" not in st.session_state:
-    st.session_state.player_names = []
-if "current_name" not in st.session_state:
-    st.session_state.current_name = 1
 if "current_player" not in st.session_state:
     st.session_state.current_player = 1
 if "imposter" not in st.session_state:
@@ -20,78 +47,51 @@ if "word" not in st.session_state:
     st.session_state.word = ""
 if "votes" not in st.session_state:
     st.session_state.votes = {}
-if "voting_player" not in st.session_state:
-    st.session_state.voting_player = 1
 if "winner" not in st.session_state:
     st.session_state.winner = None
 
-# --- WORTLISTE ---
-word_list = [
-    "Apfel", "Schule", "Auto", "Katze", "Pizza", "Fernsehen", "Zug",
-    "Zahnarzt", "Tisch", "Computer", "Hund", "Meer", "Buch", "Ball", "Haus"
-]
+# --- WORTKATEGORIEN ---
+word_categories = {
+    "Essen 🍕": ["Pizza", "Apfel", "Brot", "Nudel", "Käse"],
+    "Tiere 🐶": ["Hund", "Katze", "Pferd", "Elefant", "Vogel"],
+    "Orte 🌍": ["Schule", "Zahnarzt", "Bahnhof", "Park", "Haus"],
+    "Gegenstände 🪑": ["Tisch", "Stuhl", "Lampe", "Computer", "Buch"]
+}
 
 # --- SETUP PHASE ---
 if st.session_state.phase == "setup":
     st.title("🕵️‍♂️ Imposter ohne Wort")
-    st.write("Gib die Anzahl der Spieler ein und starte das Spiel.")
+    st.write("Willkommen! Gib die Anzahl der Spieler ein und wähle ein Thema oder ein eigenes Wort.")
 
-    num = st.number_input("Anzahl der Spieler:", min_value=3, max_value=10, step=1)
-    if st.button("Weiter"):
+    num = st.number_input("👥 Anzahl der Spieler:", min_value=3, max_value=10, step=1)
+
+    category = st.selectbox(
+        "📚 Wähle eine Kategorie:",
+        list(word_categories.keys()) + ["Eigenes Wort eingeben"]
+    )
+
+    if category == "Eigenes Wort eingeben":
+        custom_word = st.text_input("✏️ Gib dein eigenes Wort ein:")
+    else:
+        custom_word = None
+
+    if st.button("🎮 Spiel starten"):
         st.session_state.num_players = num
-        st.session_state.phase = "names"
-        st.session_state.player_names = []
-        st.session_state.current_name = 1
-        st.rerun()
-
-# --- NAMEN EINGEBEN PHASE ---
-elif st.session_state.phase == "names":
-    st.title("👥 Spielernamen eingeben")
-    st.write(f"Wie heißt Spieler {st.session_state.current_name}?")
-
-    # einzigartiger Key, damit Streamlit den Input pro Spieler trennt
-    input_key = f"name_input_{st.session_state.current_name}"
-    name = st.text_input("Name eingeben:", key=input_key)
-
-    if st.button("Speichern"):
-        if name.strip() != "":
-            st.session_state.player_names.append(name.strip())
-
-            # Wichtig: Kein direkter Zugriff auf session_state[input_key] mehr!
-            # Dadurch kein StreamlitAPIException-Fehler.
-
-            # Wenn noch Spieler fehlen → nächster Name
-            if len(st.session_state.player_names) < st.session_state.num_players:
-                st.session_state.current_name += 1
-            else:
-                st.session_state.phase = "name_review"
-            st.rerun()
+        st.session_state.imposter = random.randint(1, num)
+        if custom_word:
+            st.session_state.word = custom_word
         else:
-            st.warning("Bitte einen gültigen Namen eingeben.")
-
-
-# --- NAMENSÜBERSICHT PHASE ---
-elif st.session_state.phase == "name_review":
-    st.title("✅ Teilnehmerübersicht")
-    st.write("Alle Spieler wurden erfolgreich eingetragen:")
-
-    for i, name in enumerate(st.session_state.player_names, start=1):
-        st.write(f"**Spieler {i}:** {name}")
-
-    if st.button("Spiel starten 🚀"):
-        st.session_state.imposter = random.randint(1, st.session_state.num_players)
-        st.session_state.word = random.choice(word_list)
+            st.session_state.word = random.choice(word_categories[category])
         st.session_state.phase = "show_word"
         st.session_state.current_player = 1
         st.rerun()
 
 # --- SHOW WORD PHASE ---
 elif st.session_state.phase == "show_word":
-    st.title("Spieler-Runde")
-    name = st.session_state.player_names[st.session_state.current_player - 1]
-    st.write(f"👉 {name} ist dran.")
+    st.title("🎭 Spieler-Runde")
+    st.write(f"👉 Spieler {st.session_state.current_player} ist dran.")
 
-    if st.button(f"Ich bin {name}"):
+    if st.button(f"Ich bin Spieler {st.session_state.current_player}"):
         if st.session_state.current_player == st.session_state.imposter:
             st.session_state.reveal = "Du bist der Imposter 😈"
         else:
@@ -107,43 +107,24 @@ elif st.session_state.phase == "reveal":
             st.session_state.current_player += 1
             st.session_state.phase = "show_word"
         else:
-            st.session_state.phase = "discussion"
-
-# --- DISCUSSION PHASE ---
-elif st.session_state.phase == "discussion":
-    st.title("💬 Diskussionsrunde")
-    st.write("Jetzt sagt **jeder Spieler ein Wort** zu dem Thema oder beschreibt es kurz, "
-             "ohne das Wort direkt zu nennen. Der Imposter muss versuchen mitzuhalten!")
-
-    st.info("Wenn ihr fertig seid mit der Runde, klickt auf **Weiter zur Abstimmung**.")
-
-    if st.button("Weiter zur Abstimmung 🗳️"):
-        st.session_state.phase = "voting"
-        st.session_state.votes = {name: 0 for name in st.session_state.player_names}
-        st.session_state.voting_player = 1
+            st.session_state.phase = "voting"
+            st.session_state.votes = {i: 0 for i in range(1, st.session_state.num_players + 1)}
         st.rerun()
-
 
 # --- VOTING PHASE ---
 elif st.session_state.phase == "voting":
     st.title("🗳️ Abstimmung")
-    current_voter_name = st.session_state.player_names[st.session_state.voting_player - 1]
-    st.subheader(f"Jetzt stimmt ab: {current_voter_name}")
+    st.write("Jetzt stimmt jeder ab, wer der Imposter ist!")
 
-    # Nur Spieler auswählen, nicht sich selbst
-    options = [
-        name for name in st.session_state.player_names
-        if name != current_voter_name
-    ]
-    choice = st.selectbox("Wähle den verdächtigen Spieler:", options)
+    voted = st.number_input(
+        "Gib die Nummer des verdächtigen Spielers ein:",
+        min_value=1, max_value=st.session_state.num_players, step=1
+    )
 
     if st.button("Stimme abgeben"):
-        st.session_state.votes[choice] += 1
-
-        # Nächster Spieler oder Ergebnis
-        if st.session_state.voting_player < st.session_state.num_players:
-            st.session_state.voting_player += 1
-        else:
+        st.session_state.votes[voted] += 1
+        total_votes = sum(st.session_state.votes.values())
+        if total_votes >= st.session_state.num_players:
             st.session_state.phase = "result"
         st.rerun()
 
@@ -154,19 +135,33 @@ elif st.session_state.phase == "result":
     max_votes = max(st.session_state.votes.values())
     most_voted = [p for p, v in st.session_state.votes.items() if v == max_votes]
 
-    imposter_name = st.session_state.player_names[st.session_state.imposter - 1]
-
-    if imposter_name in most_voted:
+    if st.session_state.imposter in most_voted:
         st.success("🎉 Die Gruppe gewinnt! Der Imposter wurde enttarnt!")
     else:
         st.error("😈 Der Imposter gewinnt! Niemand hat ihn erkannt!")
 
-    st.write(f"Der Imposter war: **{imposter_name}**")
+    st.write(f"Der Imposter war: **Spieler {st.session_state.imposter}**")
     st.write(f"Das Wort war: **{st.session_state.word}**")
 
-    st.write("### 📊 Stimmenübersicht:")
-    for player, votes in st.session_state.votes.items():
-        st.write(f"{player}: {votes} Stimmen")
+    # --- PDF EXPORT ---
+    if st.button("📄 Ergebnis als PDF speichern"):
+        pdf_path = "/mnt/data/imposter_ergebnis.pdf"
+        c = canvas.Canvas(pdf_path, pagesize=A4)
+        text = c.beginText(50, 800)
+        text.setFont("Helvetica", 12)
+        text.textLine("🕵️‍♂️ Imposter ohne Wort - Spielergebnis")
+        text.textLine("-----------------------------")
+        text.textLine(f"Anzahl Spieler: {st.session_state.num_players}")
+        text.textLine(f"Imposter: Spieler {st.session_state.imposter}")
+        text.textLine(f"Wort: {st.session_state.word}")
+        text.textLine("")
+        text.textLine("Abstimmungsergebnisse:")
+        for p, v in st.session_state.votes.items():
+            text.textLine(f"Spieler {p}: {v} Stimmen")
+        c.drawText(text)
+        c.save()
+        with open(pdf_path, "rb") as f:
+            st.download_button("📥 Download Ergebnis", f, file_name="imposter_ergebnis.pdf")
 
     if st.button("🔁 Noch ein Spiel"):
         for key in list(st.session_state.keys()):
