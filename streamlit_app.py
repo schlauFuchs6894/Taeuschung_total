@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Imposter ohne Wort", page_icon="🕵️‍♂️")
+st.set_page_config(page_title="Imposter ohne Wort", page_icon="👀")
 
 # --- SESSION STATE SETUP ---
 if "phase" not in st.session_state:
