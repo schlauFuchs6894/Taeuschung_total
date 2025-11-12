@@ -117,6 +117,7 @@ elif st.session_state.phase == "reveal":
 # --- DISCUSSION PHASE ---
 elif st.session_state.phase == "discussion":
     st.title("💬 Diskussionsrunde")
+    st.balloons
     st.write("Jeder Spieler sagt **ein Wort**, das zu dem Thema passt (aber nicht zu eindeutig sein darf).")
     st.info("Tipp: Der Imposter kennt das Wort nicht – also gut bluffen 😏")
 
