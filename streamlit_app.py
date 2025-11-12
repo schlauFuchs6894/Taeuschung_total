@@ -162,12 +162,20 @@ elif st.session_state.phase == "result":
     imposter_num = st.session_state.imposter
     imposter_name = st.session_state.names.get(imposter_num, f"Spieler {imposter_num}")
 
+    # --- Gewinneranzeige ---
     if imposter_num in most_voted:
         st.success(f"🎉 Die Gruppe gewinnt! Der Imposter war **{imposter_name}**!")
     else:
         st.error(f"😈 Der Imposter ({imposter_name}) gewinnt! Niemand hat ihn erkannt!")
 
     st.write(f"Das Wort war: **{st.session_state.word}**")
+
+    # --- Stimmenübersicht ---
+    st.subheader("🗳️ Abstimmungsergebnisse")
+    for i, v in st.session_state.votes.items():
+        name = st.session_state.names.get(i, f"Spieler {i}")
+        st.write(f"- **{name}**: {v} Stimme{'n' if v != 1 else ''}")
+
 
     # --- TEXT EXPORT ---
     if st.button("📄 Ergebnis speichern (Textdatei)"):
